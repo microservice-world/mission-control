@@ -156,12 +156,14 @@ export function MultiGatewayPanel() {
       </div>
 
       {/* Current connection info */}
-      <div className="bg-card border border-border rounded-lg p-4">
+      <div className={`bg-card border rounded-lg p-4 transition-smooth ${
+        connection.isConnected ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'
+      }`}>
         <div className="flex items-center gap-3">
           <span className={`w-2.5 h-2.5 rounded-full ${connection.isConnected ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
           <div>
             <div className="text-sm font-medium text-foreground">
-              {connection.isConnected ? 'Connected' : 'Disconnected'}
+              {connection.isConnected ? 'Connected to Gateway' : 'Disconnected from Gateway'}
             </div>
             <div className="text-xs text-muted-foreground">
               {connection.url || 'No active connection'}
