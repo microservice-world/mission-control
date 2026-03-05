@@ -483,6 +483,21 @@ function ActiveRunCard({ run, onAdvance, onCancel }: {
   onAdvance: (id: number, success: boolean) => void
   onCancel: (id: number) => void
 }) {
+  const [showLogs, setShowLogs] = useState(false)
+  const [logs, setLogs] = useState<any[]>([])
+
+  useEffect(() => {
+    if (!showLogs) return
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/activities?limit=10&search=${encodeURIComponent(`[PIPELINE_RUN:${run.id}]`)}`)
+        const data = await res.json()
+        if (data?.activities) setLogs(data.activities)
+      } catch {}
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [showLogs, run.id])
+
   return (
     <div className="p-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5">
       <div className="flex items-center justify-between mb-1.5">
@@ -497,6 +512,7 @@ function ActiveRunCard({ run, onAdvance, onCancel }: {
         </span>
       </div>
       <RunStepsViz steps={run.steps_snapshot} />
+      
       <div className="flex gap-1 mt-2">
         <button onClick={() => onAdvance(run.id, true)} className="h-6 px-2 rounded bg-green-500/20 text-green-400 text-2xs hover:bg-green-500/30">
           Step Done
@@ -504,10 +520,31 @@ function ActiveRunCard({ run, onAdvance, onCancel }: {
         <button onClick={() => onAdvance(run.id, false)} className="h-6 px-2 rounded bg-red-500/20 text-red-400 text-2xs hover:bg-red-500/30">
           Step Failed
         </button>
+        <button 
+          onClick={() => setShowLogs(!showLogs)} 
+          className={`h-6 px-2 rounded text-2xs transition-smooth ${showLogs ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+        >
+          {showLogs ? 'Hide Logs' : 'View Logs'}
+        </button>
         <button onClick={() => onCancel(run.id)} className="h-6 px-2 rounded bg-secondary text-muted-foreground text-2xs hover:bg-secondary/80 ml-auto">
           Cancel
         </button>
       </div>
+
+      {showLogs && (
+        <div className="mt-2 pt-2 border-t border-amber-500/20 space-y-1.5">
+          {logs.length === 0 ? (
+            <div className="text-[10px] text-muted-foreground text-center py-2">Waiting for step activity...</div>
+          ) : (
+            logs.map(log => (
+              <div key={log.id} className="text-[10px] font-mono-tight border-l border-amber-500/30 pl-2">
+                <span className="text-muted-foreground mr-1">[{new Date(log.created_at * 1000).toLocaleTimeString()}]</span>
+                <span className="text-foreground">{log.description}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   )
 }

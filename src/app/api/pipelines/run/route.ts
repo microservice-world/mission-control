@@ -130,7 +130,7 @@ async function spawnStep(
     const { runOpenClaw } = await import('@/lib/command')
     const args = [
       'agent',
-      '--message', `[Pipeline: ${pipelineName} | Step ${stepIdx + 1}] ${template.task_prompt}`,
+      '--message', `[PIPELINE_RUN:${runId}] [Step ${stepIdx + 1}] ${template.task_prompt}`,
       '--timeout', String(template.timeout_seconds),
       '--json',
     ]
