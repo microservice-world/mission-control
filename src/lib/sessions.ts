@@ -12,21 +12,19 @@ export interface GatewaySession {
   chatType: string
   channel: string
   model: string
+  modelProvider: string
   totalTokens: number
   inputTokens: number
   outputTokens: number
   contextTokens: number
   active: boolean
+  messageCount?: number
+  toolUses?: number
+  estimatedCost?: number
 }
 
 /**
  * Read all sessions from OpenClaw agent session stores on disk.
- *
- * OpenClaw stores sessions per-agent at:
- *   {OPENCLAW_STATE_DIR}/agents/{agentName}/sessions/sessions.json
- *
- * Each file is a JSON object keyed by session key (e.g. "agent:<agent>:main")
- * with session metadata as values.
  */
 export function getAllGatewaySessions(activeWithinMs = 60 * 60 * 1000): GatewaySession[] {
   const openclawStateDir = config.openclawStateDir
@@ -55,6 +53,22 @@ export function getAllGatewaySessions(activeWithinMs = 60 * 60 * 1000): GatewayS
       for (const [key, entry] of Object.entries(data)) {
         const s = entry as Record<string, any>
         const updatedAt = s.updatedAt || 0
+        
+        // Robust model and provider extraction
+        let model = 'unknown'
+        let modelProvider = s.modelProvider || 'unknown'
+        
+        if (typeof s.model === 'string') {
+          model = s.model
+        } else if (typeof s.model === 'object' && s.model !== null) {
+          model = s.model.primary || s.model.id || 'unknown'
+        }
+
+        // If provider is still unknown, try to guess from model ID
+        if (modelProvider === 'unknown' && model.includes('/')) {
+          modelProvider = model.split('/')[0]
+        }
+
         sessions.push({
           key,
           agent: agentName,
@@ -62,12 +76,16 @@ export function getAllGatewaySessions(activeWithinMs = 60 * 60 * 1000): GatewayS
           updatedAt,
           chatType: s.chatType || 'unknown',
           channel: s.deliveryContext?.channel || s.lastChannel || s.channel || '',
-          model: typeof s.model === 'object' && s.model?.primary ? String(s.model.primary) : String(s.model || ''),
+          model,
+          modelProvider,
           totalTokens: s.totalTokens || 0,
           inputTokens: s.inputTokens || 0,
           outputTokens: s.outputTokens || 0,
           contextTokens: s.contextTokens || 0,
           active: (now - updatedAt) < activeWithinMs,
+          messageCount: s.messageCount,
+          toolUses: s.toolUses,
+          estimatedCost: s.estimatedCost
         })
       }
     } catch {

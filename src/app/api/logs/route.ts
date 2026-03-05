@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readFile, readdir, stat } from 'fs/promises'
 import { join } from 'path'
 import { config } from '@/lib/config'
+import { getDatabase } from '@/lib/db'
 import { requireRole } from '@/lib/auth'
 import { readLimiter, mutationLimiter } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
@@ -16,6 +17,46 @@ interface LogEntry {
   session?: string
   message: string
   data?: any
+}
+
+/**
+ * Fetch logs from the activities database table
+ */
+async function getActivitiesAsLogs(limit: number, level?: string, actor?: string, search?: string): Promise<LogEntry[]> {
+  try {
+    const db = getDatabase()
+    let query = 'SELECT id, type, actor, description, data, created_at FROM activities WHERE 1=1'
+    const params: any[] = []
+
+    if (level === 'error') {
+      query += " AND type LIKE '%error%'"
+    }
+    if (actor) {
+      query += ' AND actor = ?'
+      params.push(actor)
+    }
+    if (search) {
+      query += ' AND (description LIKE ? OR actor LIKE ?)'
+      params.push(`%${search}%`, `%${search}%`)
+    }
+
+    query += ' ORDER BY id DESC LIMIT ?'
+    params.push(limit)
+
+    const rows = db.prepare(query).all(...params) as any[]
+    
+    return rows.map(row => ({
+      id: `act-${row.id}`,
+      timestamp: row.created_at * 1000,
+      level: row.type.includes('error') ? 'error' : row.type.includes('warn') ? 'warn' : 'info',
+      source: row.actor || 'system',
+      message: row.description,
+      data: row.data ? JSON.parse(row.data) : null
+    }))
+  } catch (err) {
+    logger.error({ err }, 'Failed to fetch activities as logs')
+    return []
+  }
 }
 
 /**
@@ -194,12 +235,13 @@ export async function GET(request: NextRequest) {
 
     if (action === 'recent') {
       const logFiles = await discoverLogFiles()
-      let logs: LogEntry[] = []
+      const activityLogs = await getActivitiesAsLogs(limit, level || undefined, source || undefined, search || undefined)
+      let logs: LogEntry[] = [...activityLogs]
 
       // Read from all discovered log files
       for (const file of logFiles) {
         if (source && file.source !== source) continue
-        const entries = await readLogFile(file.path, file.source, 200)
+        const entries = await readLogFile(file.path, file.source, limit)
         logs.push(...entries)
       }
 
@@ -227,18 +269,27 @@ export async function GET(request: NextRequest) {
 
     if (action === 'sources') {
       const logFiles = await discoverLogFiles()
-      const sources = logFiles.map(f => f.source)
-      return NextResponse.json({ sources })
+      const sources = new Set(logFiles.map(f => f.source))
+      
+      // Add agent names as sources from activities
+      try {
+        const db = getDatabase()
+        const actors = db.prepare('SELECT DISTINCT actor FROM activities').all() as any[]
+        actors.forEach(a => { if (a.actor) sources.add(a.actor) })
+      } catch {}
+
+      return NextResponse.json({ sources: Array.from(sources) })
     }
 
     if (action === 'tail') {
       const sinceTimestamp = parseInt(searchParams.get('since') || '0')
       const logFiles = await discoverLogFiles()
-      let logs: LogEntry[] = []
+      const activityLogs = await getActivitiesAsLogs(20, level || undefined, source || undefined, search || undefined)
+      let logs: LogEntry[] = [...activityLogs.filter(e => e.timestamp > sinceTimestamp)]
 
       for (const file of logFiles) {
         if (source && file.source !== source) continue
-        const entries = await readLogFile(file.path, file.source, 50)
+        const entries = await readLogFile(file.path, file.source, 20)
         logs.push(...entries.filter(e => e.timestamp > sinceTimestamp))
       }
 

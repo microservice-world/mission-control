@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
           kind: s.chatType || 'unknown',
           age: formatAge(s.updatedAt),
           model: s.model,
+          modelProvider: s.modelProvider,
           tokens: `${formatTokens(total)}/${formatTokens(context)} (${pct}%)`,
           channel: s.channel,
           flags: [],
@@ -44,6 +45,9 @@ export async function GET(request: NextRequest) {
           startTime: s.updatedAt,
           lastActivity: s.updatedAt,
           source: 'gateway' as const,
+          messageCount: s.messageCount,
+          toolUses: s.toolUses,
+          estimatedCost: s.estimatedCost
         }
       })
       return NextResponse.json({ sessions })

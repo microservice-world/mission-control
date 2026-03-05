@@ -7,36 +7,46 @@ export function LiveFeed() {
   const { logs, sessions, activities, connection, dashboardMode, toggleLiveFeed } = useMissionControl()
   const isLocal = dashboardMode === 'local'
   const [expanded, setExpanded] = useState(true)
+  const [sessionStartTime] = useState(Date.now())
 
   // Combine logs, activities, and (in local mode) session events into a unified feed
   const sessionItems = isLocal
-    ? sessions.slice(0, 10).map(s => ({
-        id: `sess-${s.id}`,
-        type: 'session' as const,
-        level: 'info' as const,
-        message: `${s.active ? 'Active' : 'Idle'} session: ${s.key || s.id}`,
-        source: s.model?.split('/').pop()?.split('-').slice(0, 2).join('-') || 'claude',
-        timestamp: s.lastActivity || s.startTime || Date.now(),
-      }))
+    ? sessions
+        .filter(s => (s.lastActivity || s.startTime || 0) > sessionStartTime)
+        .slice(0, 10)
+        .map(s => ({
+          id: `sess-${s.id}`,
+          type: 'session' as const,
+          level: 'info' as const,
+          message: `${s.active ? 'Active' : 'Idle'} session: ${s.key || s.id}`,
+          source: s.model?.split('/').pop()?.split('-').slice(0, 2).join('-') || 'claude',
+          timestamp: s.lastActivity || s.startTime || Date.now(),
+        }))
     : []
 
   const feedItems = [
-    ...logs.slice(0, 30).map(log => ({
-      id: `log-${log.id}`,
-      type: 'log' as const,
-      level: log.level,
-      message: log.message,
-      source: log.source,
-      timestamp: log.timestamp,
-    })),
-    ...activities.slice(0, 20).map(act => ({
-      id: `act-${act.id}`,
-      type: 'activity' as const,
-      level: 'info' as const,
-      message: act.description,
-      source: act.actor,
-      timestamp: act.created_at * 1000,
-    })),
+    ...logs
+      .filter(log => log.timestamp > sessionStartTime)
+      .slice(0, 30)
+      .map(log => ({
+        id: `log-${log.id}`,
+        type: 'log' as const,
+        level: log.level,
+        message: log.message,
+        source: log.source,
+        timestamp: log.timestamp,
+      })),
+    ...activities
+      .filter(act => (act.created_at * 1000) > sessionStartTime)
+      .slice(0, 20)
+      .map(act => ({
+        id: `act-${act.id}`,
+        type: 'activity' as const,
+        level: 'info' as const,
+        message: act.description,
+        source: act.actor,
+        timestamp: act.created_at * 1000,
+      })),
     ...sessionItems,
   ].sort((a, b) => b.timestamp - a.timestamp).slice(0, 40)
 

@@ -11,12 +11,15 @@ export interface Session {
   kind: string
   age: string
   model: string
+  modelProvider?: string
   tokens: string
   flags: string[]
   active: boolean
   startTime?: number
   lastActivity?: number
   messageCount?: number
+  toolUses?: number
+  estimatedCost?: number
   cost?: number
 }
 
