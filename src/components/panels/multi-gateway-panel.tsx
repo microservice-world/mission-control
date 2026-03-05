@@ -186,19 +186,33 @@ export function MultiGatewayPanel() {
         </div>
       ) : (
         <div className="space-y-2">
-          {gateways.map(gw => (
-            <GatewayCard
-              key={gw.id}
-              gateway={gw}
-              health={healthByGatewayId.get(gw.id)}
-              isProbing={probing === gw.id}
-              isCurrentlyConnected={connection.url?.includes(`:${gw.port}`) ?? false}
-              onSetPrimary={() => setPrimary(gw)}
-              onDelete={() => deleteGateway(gw.id)}
-              onConnect={() => connectTo(gw)}
-              onProbe={() => probeGateway(gw)}
-            />
-          ))}
+          {gateways.map(gw => {
+            // Check if this gateway matches the current active connection
+            let isCurrentlyConnected = false;
+            if (connection.url) {
+              const url = connection.url.toLowerCase();
+              const hostMatch = url.includes(gw.host.toLowerCase());
+              const portMatch = url.includes(`:${gw.port}`) || 
+                               (url.startsWith('wss://') && url.includes(':443')) ||
+                               (url.startsWith('wss://') && !url.includes(':', 6)); // Default wss port 443
+              
+              isCurrentlyConnected = hostMatch && portMatch;
+            }
+
+            return (
+              <GatewayCard
+                key={gw.id}
+                gateway={gw}
+                health={healthByGatewayId.get(gw.id)}
+                isProbing={probing === gw.id}
+                isCurrentlyConnected={isCurrentlyConnected}
+                onSetPrimary={() => setPrimary(gw)}
+                onDelete={() => deleteGateway(gw.id)}
+                onConnect={() => connectTo(gw)}
+                onProbe={() => probeGateway(gw)}
+              />
+            );
+          })}
         </div>
       )}
 
