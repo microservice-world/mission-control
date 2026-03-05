@@ -948,7 +948,7 @@ export function CreateAgentModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-lg max-w-2xl w-full max-h-[85vh] flex flex-col">
+      <div className="bg-card border border-border rounded-lg  w-full max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-border flex-shrink-0">
           <div className="flex justify-between items-center">

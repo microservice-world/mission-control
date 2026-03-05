@@ -200,7 +200,7 @@ export function AgentHistoryPanel() {
                   {selectedAgentData.last_activity && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Last action</span>
-                      <span className="text-foreground truncate max-w-[140px]" title={selectedAgentData.last_activity}>
+                      <span className="text-foreground truncate [140px]" title={selectedAgentData.last_activity}>
                         {selectedAgentData.last_activity}
                       </span>
                     </div>

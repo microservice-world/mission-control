@@ -36,14 +36,13 @@ import { ChatPanel } from '@/components/chat/chat-panel'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { LocalModeBanner } from '@/components/layout/local-mode-banner'
 import { UpdateBanner } from '@/components/layout/update-banner'
-import { PromoBanner } from '@/components/layout/promo-banner'
 import { useWebSocket } from '@/lib/websocket'
 import { useServerEvents } from '@/lib/use-server-events'
 import { useMissionControl } from '@/store'
 
 export default function Home() {
   const { connect } = useWebSocket()
-  const { activeTab, setActiveTab, setCurrentUser, setDashboardMode, setGatewayAvailable, setSubscription, setUpdateAvailable, liveFeedOpen, toggleLiveFeed } = useMissionControl()
+  const { activeTab, setActiveTab, setCurrentUser, setDashboardMode, setGatewayAvailable, setSubscription, setUpdateAvailable, liveFeedOpen, toggleLiveFeed, setActivities } = useMissionControl()
 
   // Sync URL → Zustand activeTab
   const pathname = usePathname()
@@ -147,13 +146,12 @@ export default function Home() {
       <NavRail />
 
       {/* Center: Header + Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full w-full">
         <HeaderBar />
         <LocalModeBanner />
         <UpdateBanner />
-        <PromoBanner />
-        <main id="main-content" className="flex-1 overflow-auto pb-16 md:pb-0" role="main">
-          <div aria-live="polite">
+        <main id="main-content" className="flex-1 overflow-auto w-full pb-16 md:pb-0" role="main">
+          <div aria-live="polite" className="min-h-full w-full flex flex-col items-stretch">
             <ErrorBoundary key={activeTab}>
               <ContentRouter tab={activeTab} />
             </ErrorBoundary>

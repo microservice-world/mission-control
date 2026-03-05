@@ -635,7 +635,7 @@ function EmptyState() {
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="text-4xl mb-3">💬</div>
       <p className="text-sm font-medium text-muted-foreground">No messages yet</p>
-      <p className="text-xs text-muted-foreground/50 mt-1 max-w-[280px]">
+      <p className="text-xs text-muted-foreground/50 mt-1 [280px]">
         When agents talk to each other, their conversations will show up here like a group chat.
       </p>
     </div>

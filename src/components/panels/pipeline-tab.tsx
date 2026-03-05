@@ -328,7 +328,7 @@ export function PipelineTab() {
                   <div className="flex items-center gap-0.5 mt-1">
                     {p.steps.map((s, i) => (
                       <div key={i} className="flex items-center gap-0.5">
-                        <span className="text-2xs px-1 py-0.5 rounded bg-secondary text-muted-foreground truncate max-w-[80px]">
+                        <span className="text-2xs px-1 py-0.5 rounded bg-secondary text-muted-foreground truncate [80px]">
                           {s.template_name}
                         </span>
                         {i < p.steps.length - 1 && (
