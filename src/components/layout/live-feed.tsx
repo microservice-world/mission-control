@@ -42,7 +42,7 @@ export function LiveFeed() {
       .map(act => ({
         id: `act-${act.id}`,
         type: 'activity' as const,
-        level: 'info' as const,
+        level: (act.type === 'lobster_error' ? 'error' : 'info') as any,
         message: act.description,
         source: act.actor,
         timestamp: act.created_at * 1000,

@@ -33,6 +33,8 @@ const activityIcons: Record<string, string> = {
   standup_generated: '!',
   mention: '>',
   assignment: '=',
+  lobster_run: 'L',
+  lobster_error: 'E',
 }
 
 const activityColors: Record<string, string> = {
@@ -45,6 +47,8 @@ const activityColors: Record<string, string> = {
   standup_generated: 'text-orange-400',
   mention: 'text-pink-400',
   assignment: 'text-indigo-400',
+  lobster_run: 'text-indigo-400',
+  lobster_error: 'text-rose-400',
 }
 
 export function ActivityFeedPanel() {
