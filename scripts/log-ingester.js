@@ -68,6 +68,10 @@ function processLogFile(filePath, agentName) {
             const now = Math.floor(Date.now() / 1000);
             const workspaceId = 1;
 
+            // FILTER: Skip low-level noise
+            if (entry.type === 'custom') return;
+            if (entry.type === 'openclaw.cache-ttl') return;
+
             // Simple deduplication
             const exists = checkExistsStmt.get(agentName, entryStr);
             if (exists) return;
@@ -77,7 +81,6 @@ function processLogFile(filePath, agentName) {
             const agent = findAgentStmt.get(agentName, `%${agentName}%`);
             if (agent) {
                 agentId = agent.id;
-                // Use the exact name from DB for UI consistency
                 const actualAgent = db.prepare('SELECT name FROM agents WHERE id = ?').get(agentId);
                 if (actualAgent) actorName = actualAgent.name;
             }
@@ -88,8 +91,10 @@ function processLogFile(filePath, agentName) {
             if (entry.type === 'summary') {
                 type = 'agent_summary';
                 description = `Agent ${actorName} completed a turn.`;
+                // Skip logging summaries if they don't add much info to the feed
+                // return; 
             } else if (entry.role === 'tool') {
-                description = `Agent ${actorName} received tool result: ${entry.name || 'unknown'}`;
+                description = `Agent ${actorName} tool result: ${entry.name || 'unknown'}`;
                 
                 // Specialized extraction for Lobster results
                 if (entry.name === 'lobster' && entry.content && entry.content[0]?.text) {
@@ -109,22 +114,46 @@ function processLogFile(filePath, agentName) {
             } else if (entry.type === 'tool_call') {
                 description = `Agent ${actorName} calling tool: ${entry.tool || entry.name || 'unknown'}`;
             } else if (entry.type === 'message' && entry.message) {
-                // Extract actual text content if available
-                const content = entry.message.content;
-                if (Array.isArray(content)) {
-                    const textItem = content.find(c => c.type === 'text');
-                    if (textItem && textItem.text) {
-                        description = `Agent ${actorName}: ${textItem.text}`;
-                    } else {
-                        const thinkingItem = content.find(c => c.type === 'thinking');
-                        if (thinkingItem && thinkingItem.thinking) {
-                            description = `Agent ${actorName} (thinking): ${thinkingItem.thinking.substring(0, 100)}...`;
-                        }
+                const msg = entry.message;
+                
+                if (msg.role === 'toolResult') {
+                    const toolName = msg.toolName || 'unknown';
+                    let resultPreview = '';
+                    if (Array.isArray(msg.content) && msg.content[0]?.text) {
+                        resultPreview = msg.content[0].text.substring(0, 100);
                     }
-                } else if (typeof content === 'string') {
-                    description = `Agent ${actorName}: ${content}`;
+                    description = `Agent ${actorName} tool result [${toolName}]: ${resultPreview}${resultPreview.length >= 100 ? '...' : ''}`;
+                    
+                    // Specialized check for Lobster in message format
+                    if (toolName === 'lobster' && Array.isArray(msg.content) && msg.content[0]?.text) {
+                        try {
+                            const envelope = JSON.parse(msg.content[0].text);
+                            if (envelope.ok) {
+                                description = `Lobster Run [${envelope.status || 'completed'}]: Agent ${actorName} executed ${envelope.output?.length || 0} steps.`;
+                                type = 'lobster_run';
+                            }
+                        } catch (e) {}
+                    }
+                } else {
+                    const content = msg.content;
+                    if (Array.isArray(content)) {
+                        const textItem = content.find(c => c.type === 'text');
+                        if (textItem && textItem.text) {
+                            description = `Agent ${actorName}: ${textItem.text}`;
+                        } else {
+                            const thinkingItem = content.find(c => c.type === 'thinking');
+                            if (thinkingItem && thinkingItem.thinking) {
+                                description = `Agent ${actorName} (thinking): ${thinkingItem.thinking.substring(0, 100)}...`;
+                            }
+                        }
+                    } else if (typeof content === 'string') {
+                        description = `Agent ${actorName}: ${content}`;
+                    }
                 }
             }
+
+            // Skip empty/generic action descriptions to keep feed high-signal
+            if (description.endsWith(': message') || description.endsWith(': turn')) return;
 
             insertStmt.run(
                 type,
@@ -140,7 +169,6 @@ function processLogFile(filePath, agentName) {
             // AUTO-ADVANCE PIPELINES
             if (type === 'lobster_run' || entry.type === 'summary') {
                 try {
-                    // Try to find run ID in the log description or metadata
                     let targetRunId = null;
                     const runIdMatch = description.match(/\[PIPELINE_RUN:(\d+)\]/);
                     if (runIdMatch) {
