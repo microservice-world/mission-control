@@ -99,15 +99,14 @@ export function AgentCostPanel() {
   const maxCostPer1k = Math.max(...efficiencyData.map(d => d.costPer1k), 0.0001)
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 w-full space-y-6">
       {/* Header */}
-      <div className="border-b border-border pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Agent Cost Breakdown</h1>
-            <p className="text-muted-foreground mt-2">Per-agent token usage and spend analysis</p>
-          </div>
-          <div className="flex space-x-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Agent Cost Breakdown</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Per-agent token usage and spend analysis</p>
+        </div>
+        <div className="flex space-x-2">
             {(['hour', 'day', 'week', 'month'] as const).map((tf) => (
               <button
                 key={tf}
@@ -121,7 +120,6 @@ export function AgentCostPanel() {
                 {tf.charAt(0).toUpperCase() + tf.slice(1)}
               </button>
             ))}
-          </div>
         </div>
       </div>
 

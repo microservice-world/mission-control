@@ -212,7 +212,7 @@ export function UserManagementPanel() {
   if (loading) {
     return (
       <div className="p-8 text-center">
-        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mx-auto mb-2" />
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse  mb-2" />
         <span className="text-sm text-muted-foreground">Loading users...</span>
       </div>
     )
@@ -223,7 +223,7 @@ export function UserManagementPanel() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-5">
+    <div className="p-6 w-full space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Users</h2>

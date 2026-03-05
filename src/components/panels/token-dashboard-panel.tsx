@@ -237,17 +237,16 @@ export function TokenDashboardPanel() {
   const alerts = getAlerts()
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="border-b border-border pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Token & Cost Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
-              Monitor token usage and costs across models and sessions
-            </p>
-          </div>
-          <div className="flex space-x-2">
-            {(['hour', 'day', 'week', 'month'] as const).map((timeframe) => (
+    <div className="p-4 md:p-6 w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Token & Cost Dashboard</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Monitor token usage and costs across models and sessions
+          </p>
+        </div>
+        <div className="flex space-x-2">
+          {(['hour', 'day', 'week', 'month'] as const).map((timeframe) => (
               <button
                 key={timeframe}
                 onClick={() => setSelectedTimeframe(timeframe)}
@@ -260,7 +259,6 @@ export function TokenDashboardPanel() {
                 {timeframe.charAt(0).toUpperCase() + timeframe.slice(1)}
               </button>
             ))}
-          </div>
         </div>
       </div>
 

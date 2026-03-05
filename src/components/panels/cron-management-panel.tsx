@@ -392,16 +392,15 @@ export function CronManagementPanel() {
         : calendarDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="border-b border-border pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Cron Management</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage automated tasks and scheduled jobs
-            </p>
-          </div>
-          <div className="flex space-x-2">
+    <div className="p-4 md:p-6 w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Cron Management</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Manage automated tasks and scheduled jobs
+          </p>
+        </div>
+        <div className="flex space-x-2">
             <button
               onClick={loadCronJobs}
               disabled={isLoading}
@@ -415,7 +414,6 @@ export function CronManagementPanel() {
             >
               Add Job
             </button>
-          </div>
         </div>
       </div>
 
@@ -797,7 +795,7 @@ export function CronManagementPanel() {
       {/* Add Job Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card border border-border rounded-lg p-6 w-full max-w-2xl m-4">
+          <div className="bg-card border border-border rounded-lg p-6 w-full  m-4">
             <h2 className="text-xl font-semibold mb-4">Add New Cron Job</h2>
             
             <div className="space-y-4">

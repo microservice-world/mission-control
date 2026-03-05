@@ -394,14 +394,14 @@ export function SuperAdminPanel() {
   if (loading) {
     return (
       <div className="p-8 text-center">
-        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mx-auto mb-2" />
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse  mb-2" />
         <span className="text-sm text-muted-foreground">Loading super admin data...</span>
       </div>
     )
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-5">
+    <div className="p-6 w-full space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Super Mission Control</h2>
@@ -840,7 +840,7 @@ export function SuperAdminPanel() {
 
       {decommissionDialog.open && decommissionDialog.tenant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-2xl rounded-lg border border-border bg-card shadow-xl">
+          <div className="w-full  rounded-lg border border-border bg-card shadow-xl">
             <div className="px-4 py-3 border-b border-border">
               <h3 className="text-sm font-semibold text-foreground">Queue Decommission: {decommissionDialog.tenant.display_name}</h3>
               <p className="text-xs text-muted-foreground mt-1">Review impact before creating the job.</p>

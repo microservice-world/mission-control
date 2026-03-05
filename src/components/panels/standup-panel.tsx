@@ -254,10 +254,14 @@ export function StandupPanel() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-border flex-shrink-0">
-        <h2 className="text-xl font-bold text-foreground">Daily Standup</h2>
+    <div className="p-4 md:p-6 w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Daily Standup</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Automated status reports and team accomplishments
+          </p>
+        </div>
 
         <div className="flex items-center gap-3">
           {/* View Toggle */}
@@ -502,7 +506,7 @@ export function StandupPanel() {
           ) : (
             // Empty state for current view
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-14 h-14 rounded-xl bg-surface-2 flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 rounded-xl bg-surface-2 flex items-center justify-center  mb-4">
                 <svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-muted-foreground/40">
                   <path d="M2 12V4h3l2-2h2l2 2h3v8H2z" />
                   <path d="M5 8h6M8 5v6" />

@@ -241,7 +241,7 @@ export function IntegrationsPanel() {
   const connectedCount = integrations.filter(i => i.status === 'connected').length
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 w-full space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -390,7 +390,7 @@ export function IntegrationsPanel() {
       {/* Remove confirmation dialog */}
       {confirmRemove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-card border border-border rounded-lg shadow-xl p-5 max-w-sm mx-4 space-y-4">
+          <div className="bg-card border border-border rounded-lg shadow-xl p-5  mx-4 space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Remove integration?</h3>
             <p className="text-xs text-muted-foreground">
               This will remove {confirmRemove.keys.length === 1 ? (

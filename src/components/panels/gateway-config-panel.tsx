@@ -120,7 +120,7 @@ export function GatewayConfigPanel() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
+    <div className="p-4 md:p-6 w-full space-y-4">
       {/* Header */}
       <div>
         <h2 className="text-lg font-semibold text-foreground">Gateway Configuration</h2>

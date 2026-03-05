@@ -227,11 +227,14 @@ export function AgentSquadPanelPhase3() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="p-4 md:p-6 w-full h-full flex flex-col space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-border flex-shrink-0">
+      <div className="flex justify-between items-center border-b border-border pb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-foreground">Agent Squad</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Agent Squad</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Deploy and manage your agent army</p>
+          </div>
           
           {/* Status Summary */}
           <div className="flex gap-2 text-sm">
@@ -625,7 +628,7 @@ function AgentDetailModalPhase3({
       onClick={onClose}
     >
       <div
-        className="bg-card border border-border/80 rounded-xl shadow-2xl shadow-black/40 max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+        className="bg-card border border-border/80 rounded-xl shadow-2xl shadow-black/40  w-full max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -803,7 +806,7 @@ function QuickSpawnModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-lg max-w-md w-full p-6">
+      <div className="bg-card border border-border rounded-lg  w-full p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-foreground">
             Quick Spawn for {agent.name}

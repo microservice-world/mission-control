@@ -133,38 +133,36 @@ export function OfficePanel() {
   }
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="border-b border-border pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Virtual Office</h1>
-            <p className="text-muted-foreground mt-1">See your agents at work in real time</p>
+    <div className="p-4 md:p-6 w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Virtual Office</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">See your agents at work in real time</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground mr-4">
+            {counts.busy > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" />{counts.busy} working</span>}
+            {counts.idle > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" />{counts.idle} idle</span>}
+            {counts.error > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" />{counts.error} error</span>}
+            {counts.offline > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-500" />{counts.offline} away</span>}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mr-4">
-              {counts.busy > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" />{counts.busy} working</span>}
-              {counts.idle > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" />{counts.idle} idle</span>}
-              {counts.error > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" />{counts.error} error</span>}
-              {counts.offline > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-500" />{counts.offline} away</span>}
-            </div>
-            <div className="flex rounded-md overflow-hidden border border-border">
-              <button
-                onClick={() => setViewMode('office')}
-                className={`px-3 py-1 text-sm transition-smooth ${viewMode === 'office' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-surface-2'}`}
-              >
-                Office
-              </button>
-              <button
-                onClick={() => setViewMode('org-chart')}
-                className={`px-3 py-1 text-sm transition-smooth ${viewMode === 'org-chart' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-surface-2'}`}
-              >
-                Org Chart
-              </button>
-            </div>
-            <button onClick={fetchAgents} className="px-3 py-1.5 text-sm bg-secondary text-muted-foreground rounded-md hover:bg-surface-2 transition-smooth">
-              Refresh
+          <div className="flex rounded-md overflow-hidden border border-border">
+            <button
+              onClick={() => setViewMode('office')}
+              className={`px-3 py-1 text-sm transition-smooth ${viewMode === 'office' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-surface-2'}`}
+            >
+              Office
+            </button>
+            <button
+              onClick={() => setViewMode('org-chart')}
+              className={`px-3 py-1 text-sm transition-smooth ${viewMode === 'org-chart' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-surface-2'}`}
+            >
+              Org Chart
             </button>
           </div>
+          <button onClick={fetchAgents} className="px-3 py-1.5 text-sm bg-secondary text-muted-foreground rounded-md hover:bg-surface-2 transition-smooth">
+            Refresh
+          </button>
         </div>
       </div>
 
@@ -272,7 +270,7 @@ export function OfficePanel() {
 
       {selectedAgent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedAgent(null)}>
-          <div className="bg-card border border-border rounded-xl max-w-sm w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-card border border-border rounded-xl max-w-md w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
                 <div className={`w-14 h-14 rounded-full ${hashColor(selectedAgent.name)} flex items-center justify-center text-white font-bold text-lg ring-2 ring-offset-2 ring-offset-card ${selectedAgent.status === 'busy' ? 'ring-yellow-500' : selectedAgent.status === 'idle' ? 'ring-green-500' : selectedAgent.status === 'error' ? 'ring-red-500' : 'ring-gray-600'}`}>

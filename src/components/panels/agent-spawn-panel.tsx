@@ -111,12 +111,14 @@ export function AgentSpawnPanel() {
   const selectedModel = availableModels.find(m => m.alias === formData.model)
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="border-b border-border pb-4">
-        <h1 className="text-3xl font-bold text-foreground">Agent Spawn Control</h1>
-        <p className="text-muted-foreground mt-2">
-          Launch new sub-agents for specific tasks with custom parameters
-        </p>
+    <div className="p-4 md:p-6 w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Agent Spawn Control</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Launch new sub-agents for specific tasks with custom parameters
+          </p>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">

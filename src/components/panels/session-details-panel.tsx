@@ -135,12 +135,14 @@ export function SessionDetailsPanel() {
   const selectedSessionData = sessions.find(s => s.id === selectedSession)
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="border-b border-border pb-4">
-        <h1 className="text-3xl font-bold text-foreground">Session Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Monitor and manage active agent sessions
-        </p>
+    <div className="p-4 md:p-6 w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Session Management</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Monitor and manage active agent sessions
+          </p>
+        </div>
       </div>
 
       {/* Filters and Controls */}
@@ -256,7 +258,7 @@ export function SessionDetailsPanel() {
                       <div>
                         <div className="text-sm text-muted-foreground mb-1">Model</div>
                         <div className="font-medium text-foreground">{modelInfo.alias}</div>
-                        <div className="text-xs text-muted-foreground">{modelInfo.provider}</div>
+                        <div className="text-xs text-muted-foreground">{session.modelProvider || modelInfo.provider}</div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground mb-1">Token Usage</div>
@@ -299,6 +301,18 @@ export function SessionDetailsPanel() {
                               <div>
                                 <span className="text-muted-foreground">Messages:</span> 
                                 <span className="ml-2 text-foreground">{session.messageCount}</span>
+                              </div>
+                            )}
+                            {session.toolUses && (
+                              <div>
+                                <span className="text-muted-foreground">Tool Uses:</span> 
+                                <span className="ml-2 text-foreground">{session.toolUses}</span>
+                              </div>
+                            )}
+                            {session.estimatedCost && (
+                              <div>
+                                <span className="text-muted-foreground">Est. Cost:</span> 
+                                <span className="ml-2 text-green-400">${session.estimatedCost.toFixed(4)}</span>
                               </div>
                             )}
                           </div>

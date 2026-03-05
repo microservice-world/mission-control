@@ -212,7 +212,7 @@ export function GitHubSyncPanel() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 w-full space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -380,7 +380,7 @@ export function GitHubSyncPanel() {
                 {previewIssues.map(issue => (
                   <tr key={issue.number} className="border-b border-border/50 hover:bg-secondary/50">
                     <td className="px-4 py-2 text-muted-foreground">{issue.number}</td>
-                    <td className="px-4 py-2 text-foreground max-w-[300px] truncate">
+                    <td className="px-4 py-2 text-foreground [300px] truncate">
                       <a
                         href={issue.html_url}
                         target="_blank"
@@ -487,7 +487,7 @@ export function GitHubSyncPanel() {
               <tbody>
                 {linkedTasks.map(task => (
                   <tr key={task.id} className="border-b border-border/50 hover:bg-secondary/50">
-                    <td className="px-4 py-2 text-foreground max-w-[250px] truncate">{task.title}</td>
+                    <td className="px-4 py-2 text-foreground [250px] truncate">{task.title}</td>
                     <td className="px-4 py-2">
                       <span className="px-1.5 py-0.5 rounded text-2xs bg-secondary text-muted-foreground">
                         {task.status}

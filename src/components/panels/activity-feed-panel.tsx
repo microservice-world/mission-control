@@ -133,15 +133,18 @@ export function ActivityFeedPanel() {
   const actors = Array.from(new Set(activities.map(a => a.actor))).sort()
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="p-4 md:p-6 w-full space-y-6 flex flex-col h-full">
       {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-border flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-foreground">Activity Feed</h2>
-          <div className={`w-2.5 h-2.5 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground/30'}`} />
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Activity Feed</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Real-time feed of all agent and system activities
+          </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground/30'}`} />
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
             className={`px-3 py-1.5 text-sm rounded-md transition-smooth ${
@@ -162,7 +165,7 @@ export function ActivityFeedPanel() {
       </div>
 
       {/* Filters */}
-      <div className="p-4 border-b border-border bg-surface-1 flex-shrink-0">
+      <div className="p-4 border border-border bg-surface-1 rounded-lg flex-shrink-0">
         <div className="flex gap-4 flex-wrap">
           <div>
             <label className="block text-xs text-muted-foreground mb-1">Activity Type</label>

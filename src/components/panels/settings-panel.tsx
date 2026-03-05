@@ -150,7 +150,7 @@ export function SettingsPanel() {
   const categories = categoryOrder.filter(c => grouped[c]?.length > 0)
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 w-full space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

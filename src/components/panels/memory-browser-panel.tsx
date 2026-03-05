@@ -362,19 +362,23 @@ export function MemoryBrowserPanel() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="border-b border-border pb-4">
-        <h1 className="text-3xl font-bold text-foreground">Memory Browser</h1>
-        <p className="text-muted-foreground mt-2">
-          {isLocal
-            ? 'Browse and manage local knowledge files and memory'
-            : 'Explore knowledge files and memory structure'}
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          This page shows all workspace memory files. The agent profile Memory tab only edits that single agent&apos;s working memory.
-        </p>
-        
-        {/* Tab Navigation */}
+    <div className="p-4 md:p-6 w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Memory Browser</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {isLocal
+              ? 'Browse and manage local knowledge files and memory'
+              : 'Explore knowledge files and memory structure'}
+          </p>
+        </div>
+      </div>
+
+      <p className="text-[10px] text-muted-foreground -mt-4 opacity-70">
+        This page shows all workspace memory files. The agent profile Memory tab only edits that single agent&apos;s working memory.
+      </p>
+      
+      {/* Tab Navigation */}
         <div className="flex gap-2 mt-4">
           <button
             onClick={() => setActiveTab('all')}
@@ -407,7 +411,6 @@ export function MemoryBrowserPanel() {
             🧠 Knowledge
           </button>
         </div>
-      </div>
 
       {/* Search Bar */}
       <div className="bg-card border border-border rounded-lg p-4">
@@ -567,7 +570,7 @@ export function MemoryBrowserPanel() {
                     placeholder="Edit file content..."
                   />
                 ) : selectedMemoryFile?.endsWith('.md') ? (
-                  <div className="prose prose-invert max-w-none w-full">
+                  <div className="prose prose-invert  w-full">
                     <div className="mb-4 text-sm text-muted-foreground">
                       File: {selectedMemoryFile} | Size: {memoryContent.length} chars
                     </div>
@@ -717,7 +720,7 @@ function CreateFileModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-lg max-w-md w-full p-6 shadow-xl">
+      <div className="bg-card border border-border rounded-lg  w-full p-6 shadow-xl">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-foreground">Create New File</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl transition-smooth">×</button>
@@ -815,7 +818,7 @@ function DeleteConfirmModal({
 }) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-lg max-w-md w-full p-6 shadow-xl">
+      <div className="bg-card border border-border rounded-lg  w-full p-6 shadow-xl">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-red-400">Confirm Deletion</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl transition-smooth">×</button>

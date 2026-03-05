@@ -169,12 +169,14 @@ export function LogViewerPanel() {
   log.debug(`Store has ${logs.length} logs, filtered to ${filteredLogs.length}`)
 
   return (
-    <div className="flex flex-col h-full p-6 space-y-4">
-      <div className="border-b border-border pb-4">
-        <h1 className="text-3xl font-bold text-foreground">Log Viewer</h1>
-        <p className="text-muted-foreground mt-2">
-          Real-time streaming logs from ClawdBot gateway and system
-        </p>
+    <div className="p-4 md:p-6 w-full space-y-6 flex flex-col h-full">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Log Viewer</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Real-time streaming logs from ClawdBot gateway and system
+          </p>
+        </div>
       </div>
 
       {/* Filters and Controls */}
