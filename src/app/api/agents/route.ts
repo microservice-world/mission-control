@@ -129,8 +129,7 @@ export async function POST(request: NextRequest) {
       status = 'offline',
       config = {},
       template,
-      gateway_config,
-      write_to_gateway
+      gateway_config
     } = body;
 
     // Resolve template if specified
@@ -160,7 +159,11 @@ export async function POST(request: NextRequest) {
     }
     
     const now = Math.floor(Date.now() / 1000);
+    const openclawId = name.toLowerCase().replace(/\s+/g, '-');
     
+    // Ensure openclawId is in the finalConfig for tracking
+    finalConfig.openclawId = openclawId;
+
     const stmt = db.prepare(`
       INSERT INTO agents (
         name, role, session_key, soul_content, status, 
@@ -212,38 +215,32 @@ export async function POST(request: NextRequest) {
     // Broadcast to SSE clients
     eventBus.broadcast('agent.created', parsedAgent);
 
-    // Write to gateway config if requested
-    if (write_to_gateway && finalConfig) {
-      try {
-        const openclawId = (name || 'agent').toLowerCase().replace(/\s+/g, '-');
-        await writeAgentToConfig({
-          id: openclawId,
-          name,
-          ...(finalConfig.model && { model: finalConfig.model }),
-          ...(finalConfig.identity && { identity: finalConfig.identity }),
-          ...(finalConfig.sandbox && { sandbox: finalConfig.sandbox }),
-          ...(finalConfig.tools && { tools: finalConfig.tools }),
-          ...(finalConfig.subagents && { subagents: finalConfig.subagents }),
-          ...(finalConfig.memorySearch && { memorySearch: finalConfig.memorySearch }),
-        });
+    // MANDATORY Write to gateway config
+    try {
+      await writeAgentToConfig({
+        id: openclawId,
+        name,
+        ...(finalConfig.model && { model: finalConfig.model }),
+        ...(finalConfig.identity && { identity: finalConfig.identity }),
+        ...(finalConfig.sandbox && { sandbox: finalConfig.sandbox }),
+        ...(finalConfig.tools && { tools: finalConfig.tools }),
+        ...(finalConfig.subagents && { subagents: finalConfig.subagents }),
+        ...(finalConfig.memorySearch && { memorySearch: finalConfig.memorySearch }),
+        workspace: finalConfig.workspace || '/home/nic/.openclaw/workspace',
+      });
 
-        const ipAddress = request.headers.get('x-forwarded-for') || 'unknown';
-        logAuditEvent({
-          action: 'agent_gateway_create',
-          actor: auth.user.username,
-          actor_id: auth.user.id,
-          target_type: 'agent',
-          target_id: agentId as number,
-          detail: { name, openclaw_id: openclawId, template: template || null },
-          ip_address: ipAddress,
-        });
-      } catch (gwErr: any) {
-        logger.error({ err: gwErr }, 'Gateway write-back failed');
-        return NextResponse.json({ 
-          agent: parsedAgent,
-          warning: `Agent created in MC but gateway write failed: ${gwErr.message}`
-        }, { status: 201 });
-      }
+      const ipAddress = request.headers.get('x-forwarded-for') || 'unknown';
+      logAuditEvent({
+        action: 'agent_gateway_create',
+        actor: auth.user.username,
+        actor_id: auth.user.id,
+        target_type: 'agent',
+        target_id: agentId as number,
+        detail: { name, openclaw_id: openclawId, template: template || null },
+        ip_address: ipAddress,
+      });
+    } catch (gwErr: any) {
+      logger.error({ err: gwErr }, 'Gateway write-back failed');
     }
 
     return NextResponse.json({ agent: parsedAgent }, { status: 201 });
@@ -254,7 +251,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * PUT /api/agents - Update agent status (bulk operation for status updates)
+ * PUT /api/agents - Update agent status and configuration
  */
 export async function PUT(request: NextRequest) {
   const auth = requireRole(request, 'operator');
@@ -268,9 +265,7 @@ export async function PUT(request: NextRequest) {
     const workspaceId = auth.user.workspace_id ?? 1;
     const body = await request.json();
 
-    // Handle single agent update or bulk updates
     if (body.name) {
-      // Single agent update
       const { name, status, last_activity, config, session_key, soul_content, role } = body;
       
       const agent = db
@@ -281,15 +276,12 @@ export async function PUT(request: NextRequest) {
       }
       
       const now = Math.floor(Date.now() / 1000);
-      
-      // Build dynamic update query
       const fieldsToUpdate = [];
       const params: any[] = [];
       
       if (status !== undefined) {
         fieldsToUpdate.push('status = ?');
         params.push(status);
-        
         fieldsToUpdate.push('last_seen = ?');
         params.push(now);
       }
@@ -323,10 +315,6 @@ export async function PUT(request: NextRequest) {
       params.push(now);
       params.push(name, workspaceId);
       
-      if (fieldsToUpdate.length === 1) { // Only updated_at
-        return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
-      }
-      
       const stmt = db.prepare(`
         UPDATE agents 
         SET ${fieldsToUpdate.join(', ')}
@@ -335,30 +323,41 @@ export async function PUT(request: NextRequest) {
       
       stmt.run(...params);
       
-      // Log status change if status was updated
+      // MANDATORY Write-back to Gateway config if config or role was updated
+      if (config || role) {
+        try {
+          const parsedConfig = typeof config === 'string' ? JSON.parse(config) : (config || {});
+          const openclawId = parsedConfig.openclawId || name.toLowerCase().replace(/\s+/g, '-');
+          
+          await writeAgentToConfig({
+            id: openclawId,
+            name,
+            ...(parsedConfig.model && { model: parsedConfig.model }),
+            ...(parsedConfig.identity && { identity: parsedConfig.identity }),
+            ...(parsedConfig.sandbox && { sandbox: parsedConfig.sandbox }),
+            ...(parsedConfig.tools && { tools: parsedConfig.tools }),
+            ...(parsedConfig.subagents && { subagents: parsedConfig.subagents }),
+            ...(parsedConfig.memorySearch && { memorySearch: parsedConfig.memorySearch }),
+            workspace: parsedConfig.workspace || '/home/nic/.openclaw/workspace',
+          });
+        } catch (gwErr: any) {
+          logger.error({ err: gwErr }, 'Gateway update write-back failed');
+        }
+      }
+
       if (status !== undefined && status !== agent.status) {
         db_helpers.logActivity(
-          'agent_status_change',
-          'agent',
-          agent.id,
-          name,
+          'agent_status_change', 'agent', agent.id, name,
           `Agent status changed from ${agent.status} to ${status}`,
-          {
-            oldStatus: agent.status,
-            newStatus: status,
-            last_activity
-          },
+          { oldStatus: agent.status, newStatus: status, last_activity },
           workspaceId
         );
       }
 
-      // Broadcast update to SSE clients
       eventBus.broadcast('agent.updated', {
         id: agent.id,
         name,
         ...(status !== undefined && { status }),
-        ...(last_activity !== undefined && { last_activity }),
-        ...(role !== undefined && { role }),
         updated_at: now,
       });
 

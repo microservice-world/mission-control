@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth'
-import { syncAgentsFromConfig, previewSyncDiff } from '@/lib/agent-sync'
+import { syncAgentsBidirectional, previewSyncDiff } from '@/lib/agent-sync'
 import { logger } from '@/lib/logger'
 
 /**
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   try {
-    const result = await syncAgentsFromConfig(auth.user.username)
+    const result = await syncAgentsBidirectional(auth.user.username)
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 500 })

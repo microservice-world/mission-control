@@ -9,6 +9,7 @@ import { config } from './config'
 import { getDatabase, db_helpers, logAuditEvent } from './db'
 import { eventBus } from './event-bus'
 import { join, isAbsolute, resolve } from 'path'
+import path from 'path'
 import { existsSync, readFileSync } from 'fs'
 import { resolveWithin } from './paths'
 import { logger } from './logger'
@@ -194,6 +195,7 @@ function mapAgentToMC(agent: OpenClawAgent): {
   role: string
   config: any
   soul_content: string | null
+  session_id: string | null
 } {
   const name = agent.identity?.name || agent.name || agent.id
   const role = agent.identity?.theme || 'agent'
@@ -214,20 +216,35 @@ function mapAgentToMC(agent: OpenClawAgent): {
   // Read soul.md from the agent's workspace if available
   const soul_content = readWorkspaceFile(agent.workspace, 'soul.md')
 
-  return { name, role, config: configData, soul_content }
-}
-
-/** Sync agents from openclaw.json into the MC database */
-export async function syncAgentsFromConfig(actor: string = 'system'): Promise<SyncResult> {
-  let agents: OpenClawAgent[]
+  // Read session_id from agent's sessions.json if available
+  let session_id: string | null = null
   try {
-    agents = await readOpenClawAgents()
-  } catch (err: any) {
-    return { synced: 0, created: 0, updated: 0, agents: [], error: err.message }
+    const sessionsContent = readWorkspaceFile(agent.workspace, 'sessions/sessions.json')
+    if (sessionsContent) {
+      const sessions = JSON.parse(sessionsContent)
+      const sessionKey = `agent:${agent.id}:main`
+      if (sessions[sessionKey]) {
+        session_id = sessions[sessionKey].sessionId
+      }
+    }
+  } catch (err) {
+    logger.warn({ err, agent: agent.id }, 'Failed to read session_id for agent')
   }
 
-  if (agents.length === 0) {
-    return { synced: 0, created: 0, updated: 0, agents: [] }
+  return { name, role, config: configData, soul_content, session_id }
+}
+
+/** Sync agents from openclaw.json into the MC database and vice-versa */
+export async function syncAgentsBidirectional(actor: string = 'system'): Promise<SyncResult> {
+  const configPath = getConfigPath()
+  if (!configPath) throw new Error('OPENCLAW_CONFIG_PATH not configured')
+
+  // 1. Read from OpenClaw config
+  let configAgents: OpenClawAgent[] = []
+  try {
+    configAgents = await readOpenClawAgents()
+  } catch (err: any) {
+    logger.error({ err }, 'Failed to read OpenClaw agents for sync')
   }
 
   const db = getDatabase()
@@ -236,61 +253,100 @@ export async function syncAgentsFromConfig(actor: string = 'system'): Promise<Sy
   let updated = 0
   const results: SyncResult['agents'] = []
 
-  const findByName = db.prepare('SELECT id, name, role, config, soul_content FROM agents WHERE name = ?')
-  const insertAgent = db.prepare(`
-    INSERT INTO agents (name, role, soul_content, status, created_at, updated_at, config)
-    VALUES (?, ?, ?, 'offline', ?, ?, ?)
-  `)
-  const updateAgent = db.prepare(`
-    UPDATE agents SET role = ?, config = ?, soul_content = ?, updated_at = ? WHERE name = ?
-  `)
-
-  db.transaction(() => {
-    for (const agent of agents) {
-      const mapped = mapAgentToMC(agent)
-      const configJson = JSON.stringify(mapped.config)
-      const existing = findByName.get(mapped.name) as any
-
-      if (existing) {
-        // Check if config or soul_content actually changed
-        const existingConfig = existing.config || '{}'
-        const existingSoul = existing.soul_content || null
-        const configChanged = existingConfig !== configJson || existing.role !== mapped.role
-        const soulChanged = mapped.soul_content !== null && mapped.soul_content !== existingSoul
-
-        if (configChanged || soulChanged) {
-          // Only overwrite soul_content if we read a new value from workspace
-          const soulToWrite = mapped.soul_content ?? existingSoul
-          updateAgent.run(mapped.role, configJson, soulToWrite, now, mapped.name)
-          results.push({ id: agent.id, name: mapped.name, action: 'updated' })
-          updated++
-        } else {
-          results.push({ id: agent.id, name: mapped.name, action: 'unchanged' })
-        }
-      } else {
-        insertAgent.run(mapped.name, mapped.role, mapped.soul_content, now, now, configJson)
-        results.push({ id: agent.id, name: mapped.name, action: 'created' })
-        created++
-      }
+  // 2. Read from Mission Control database
+  const allMCAgents = db.prepare('SELECT id, name, role, config, soul_content, session_id FROM agents').all() as any[]
+  
+  // Helper to find session_id from disk
+  const findSessionIdOnDisk = (agentId: string, workspace: string | undefined): string | null => {
+    try {
+      const openclawStateDir = config.openclawStateDir
+      if (!openclawStateDir) return null
+      
+      const sessionsFile = path.join(openclawStateDir, 'agents', agentId, 'sessions', 'sessions.json')
+      if (!existsSync(sessionsFile)) return null
+      
+      const raw = readFileSync(sessionsFile, 'utf-8')
+      const sessions = JSON.parse(raw)
+      const sessionKey = `agent:${agentId}:main`
+      return sessions[sessionKey]?.sessionId || null
+    } catch {
+      return null
     }
-  })()
-
-  const synced = agents.length
-
-  // Log audit event
-  if (created > 0 || updated > 0) {
-    logAuditEvent({
-      action: 'agent_config_sync',
-      actor,
-      detail: { synced, created, updated, agents: results.filter(a => a.action !== 'unchanged').map(a => a.name) },
-    })
-
-    // Broadcast sync event
-    eventBus.broadcast('agent.created', { type: 'sync', synced, created, updated })
   }
 
-  logger.info({ synced, created, updated }, 'Agent sync complete')
-  return { synced, created, updated, agents: results }
+  // A. Push from Config to MC
+  for (const cAgent of configAgents) {
+    const mapped = mapAgentToMC(cAgent)
+    // Try to find session_id if mapped didn't get it
+    if (!mapped.session_id) {
+      mapped.session_id = findSessionIdOnDisk(cAgent.id, cAgent.workspace)
+    }
+    
+    const existing = allMCAgents.find(a => a.name === mapped.name)
+    const configJson = JSON.stringify(mapped.config)
+
+    if (existing) {
+      const existingConfig = existing.config || '{}'
+      const existingSoul = existing.soul_content || null
+      const existingSessionId = existing.session_id || null
+      
+      const configChanged = existingConfig !== configJson || existing.role !== mapped.role
+      const soulChanged = mapped.soul_content !== null && mapped.soul_content !== existingSoul
+      const sessionChanged = mapped.session_id !== null && mapped.session_id !== existingSessionId
+
+      if (configChanged || soulChanged || sessionChanged) {
+        const soulToWrite = mapped.soul_content ?? existingSoul
+        db.prepare('UPDATE agents SET role = ?, config = ?, soul_content = ?, updated_at = ?, session_id = ? WHERE name = ?')
+          .run(mapped.role, configJson, soulToWrite, now, mapped.session_id || existingSessionId, mapped.name)
+        results.push({ id: cAgent.id, name: mapped.name, action: 'updated' })
+        updated++
+      }
+    } else {
+      db.prepare(`
+        INSERT INTO agents (name, role, soul_content, status, created_at, updated_at, config, session_id, workspace_id)
+        VALUES (?, ?, ?, 'offline', ?, ?, ?, ?, 1)
+      `).run(mapped.name, mapped.role, mapped.soul_content, now, now, configJson, mapped.session_id)
+      results.push({ id: cAgent.id, name: mapped.name, action: 'created' })
+      created++
+    }
+  }
+
+  // B. Push from MC to Config (Agents created in UI but not in config)
+  const configIds = new Set(configAgents.map(a => a.id))
+  for (const mcAgent of allMCAgents) {
+    const openclawId = mcAgent.name.toLowerCase().replace(/\s+/g, '-')
+    if (!configIds.has(openclawId)) {
+      try {
+        const parsedConfig = JSON.parse(mcAgent.config || '{}')
+        await writeAgentToConfig({
+          id: openclawId,
+          name: mcAgent.name,
+          ...(parsedConfig.model && { model: parsedConfig.model }),
+          ...(parsedConfig.identity && { identity: parsedConfig.identity }),
+          ...(parsedConfig.sandbox && { sandbox: parsedConfig.sandbox }),
+          ...(parsedConfig.tools && { tools: parsedConfig.tools }),
+          ...(parsedConfig.subagents && { subagents: parsedConfig.subagents }),
+          ...(parsedConfig.memorySearch && { memorySearch: parsedConfig.memorySearch }),
+          workspace: parsedConfig.workspace || '/home/nic/.openclaw/workspace',
+        })
+        results.push({ id: openclawId, name: mcAgent.name, action: 'updated' })
+        updated++
+      } catch (err) {
+        logger.error({ err, agent: mcAgent.name }, 'Failed to push MC agent to config during sync')
+      }
+    }
+  }
+
+  if (created > 0 || updated > 0) {
+    logAuditEvent({
+      action: 'agent_bidirectional_sync',
+      actor,
+      detail: { created, updated },
+    })
+    eventBus.broadcast('agent.created', { type: 'sync', created, updated })
+  }
+
+  return { synced: configAgents.length, created, updated, agents: results }
 }
 
 /** Preview the diff between openclaw.json and MC database without writing */

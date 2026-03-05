@@ -48,7 +48,7 @@ export const config = {
   memoryDir:
     process.env.OPENCLAW_MEMORY_DIR ||
     (openclawStateDir ? path.join(openclawStateDir, 'memory') : '') ||
-    path.join(defaultDataDir, 'memory'),
+    path.join(os.homedir(), '.openclaw', 'memory'),
   soulTemplatesDir:
     process.env.OPENCLAW_SOUL_TEMPLATES_DIR ||
     (openclawStateDir ? path.join(openclawStateDir, 'templates', 'souls') : ''),

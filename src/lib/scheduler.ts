@@ -1,5 +1,5 @@
 import { getDatabase, logAuditEvent } from './db'
-import { syncAgentsFromConfig } from './agent-sync'
+import { syncAgentsBidirectional } from './agent-sync'
 import { config, ensureDirExists } from './config'
 import { join, dirname } from 'path'
 import { readdirSync, statSync, unlinkSync } from 'fs'
@@ -147,6 +147,9 @@ async function runCleanup(): Promise<{ ok: boolean; message: string }> {
 /** Check agent liveness - mark agents offline if not seen recently */
 async function runHeartbeatCheck(): Promise<{ ok: boolean; message: string }> {
   try {
+    // Perform bidirectional sync during heartbeat to catch new sessions/agents
+    await syncAgentsBidirectional('scheduler')
+
     const db = getDatabase()
     const now = Math.floor(Date.now() / 1000)
     const timeoutMinutes = getSettingNumber('general.agent_timeout_minutes', 10)
@@ -211,7 +214,7 @@ export function initScheduler() {
   if (tickInterval) return // Already running
 
   // Auto-sync agents from openclaw.json on startup
-  syncAgentsFromConfig('startup').catch(err => {
+  syncAgentsBidirectional('startup').catch(err => {
     logger.warn({ err }, 'Agent auto-sync failed')
   })
 
@@ -241,9 +244,9 @@ export function initScheduler() {
 
   tasks.set('agent_heartbeat', {
     name: 'Agent Heartbeat Check',
-    intervalMs: FIVE_MINUTES_MS,
+    intervalMs: TICK_MS, // Every 60s
     lastRun: null,
-    nextRun: now + FIVE_MINUTES_MS,
+    nextRun: now + TICK_MS,
     enabled: true,
     running: false,
   })
@@ -353,7 +356,10 @@ export function getSchedulerStatus() {
 export async function triggerTask(taskId: string): Promise<{ ok: boolean; message: string }> {
   if (taskId === 'auto_backup') return runBackup()
   if (taskId === 'auto_cleanup') return runCleanup()
-  if (taskId === 'agent_heartbeat') return runHeartbeatCheck()
+  if (taskId === 'agent_heartbeat') {
+    await syncAgentsBidirectional('manual_trigger')
+    return runHeartbeatCheck()
+  }
   if (taskId === 'webhook_retry') return processWebhookRetries()
   if (taskId === 'claude_session_scan') return syncClaudeSessions()
   return { ok: false, message: `Unknown task: ${taskId}` }
